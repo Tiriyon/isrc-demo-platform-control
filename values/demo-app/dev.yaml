@@ -1,92 +1,85 @@
-# Common values for all environments
-replicaCount: 1
+# Values need to be scoped under the chart dependency name
+demo-app:
+  replicaCount: 1
 
-volume:
-  enabled: false
-  server: ""
-  path: ""
-  mountPath: ""
+  volume:
+    enabled: false
+    server: ""
+    path: ""
+    mountPath: ""
 
-image:
-  repository: nginx
-  pullPolicy: IfNotPresent
-  tag: latest
+  image:
+    repository: nginx
+    pullPolicy: IfNotPresent
+    tag: "1.0.0"
 
-imagePullSecrets: []
+  imagePullSecrets: []
 
-nameOverride: ""
-fullnameOverride: ""
+  nameOverride: ""
+  fullnameOverride: ""
 
-serviceAccount:
-  create: true
-  annotations: {}
-  name: ""
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
 
-tls:
-  enabled: false
+  tls:
+    enabled: false
 
-podAnnotations: {}
+  podAnnotations: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+  podSecurityContext: {}
 
-envVar:
-  - name: APP_ENV
-    value: staging
-  - name: LOG_FORMAT
-    value: json
+  envVar:
+    - name: APP_ENV
+      value: production
+    - name: LOG_FORMAT
+      value: json
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+  securityContext: {}
 
-service:
-  type: ClusterIP
-  port: 8080
-  targetPort: 8080
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
 
-route:
-  enabled: false
-  annotations:
-    haproxy.router.openshift.io/timeout: 120s
+  route:
+    enabled: false
+    annotations:
+      haproxy.router.openshift.io/timeout: 120s
 
-customRoute:
-  enabled: false
-  routes: []
+  customRoute:
+    enabled: false
+    routes: []
 
-ingress:
-  enabled: false
-  annotations: {}
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          backend:
-            serviceName: chart-example.local
-            servicePort: 80
-  tls: []
+  ingress:
+    enabled: false
+    annotations: {}
+    hosts:
+      - host: chart-example.local
+        paths:
+          - path: /
+            backend:
+              serviceName: chart-example.local
+              servicePort: 80
+    tls: []
 
-resources:
-  limits:
-    cpu: 1000m
-    memory: 512Mi
-  requests:
-    cpu: 200m
-    memory: 256Mi
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi
 
-autoscaling:
-  enabled: false
-  minReplicas: 1
-  maxReplicas: 100
-  targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
 
-nodeSelector: {}
+  nodeSelector: {}
 
-tolerations: []
+  tolerations: []
 
-affinity: {}
+  affinity: {}

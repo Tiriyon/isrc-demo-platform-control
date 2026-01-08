@@ -1,5 +1,5 @@
 # Values need to be scoped under the chart dependency name
-general-template:
+demo-app:
   replicaCount: 1
 
   volume:
