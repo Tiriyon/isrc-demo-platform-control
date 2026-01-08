@@ -45,12 +45,9 @@ spec:
     spec:
       project: '{{default "applications" .application.project}}'
       
-      # Conditional source configuration based on valueStrategy
       {{- if eq .application.valueStrategy "files" }}
-      
       # OPTION A: External value files
       sources:
-        # Source 1: The actual application from app-catalog
         - repoURL: '{{.application.source.repoURL}}'
           targetRevision: '{{.application.source.targetRevision}}'
           path: '{{.application.source.path}}'
@@ -61,19 +58,15 @@ spec:
               - $values/{{default (printf "values/%s" .application.name) .application.valuesPath}}/{{.environment.name}}.yaml
             {{- if .application.helmParameters }}
             parameters:
-              {{- range .application.helmParameters }}
+            {{- range .application.helmParameters }}
               - name: '{{.name}}'
                 value: '{{.value}}'
-              {{- end }}
             {{- end }}
-        
-        # Source 2: Values from platform-control repo
+            {{- end }}
         - repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
           targetRevision: main
           ref: values
-      
       {{- else }}
-      
       # OPTION B: Inline values
       source:
         repoURL: '{{.application.source.repoURL}}'
@@ -82,30 +75,24 @@ spec:
         helm:
           releaseName: '{{.application.name}}'
           values: |
-            # Base values
             {{- if .application.baseValues }}
             {{- toYaml .application.baseValues | nindent 12 }}
             {{- end }}
-            
-            # Environment-specific values
             {{- $envName := .environment.name }}
             {{- $envValues := index .application.environmentValues $envName }}
             {{- if $envValues }}
             {{- toYaml $envValues | nindent 12 }}
             {{- end }}
-            
-            # Environment defaults (lowest priority)
             {{- if .environment.defaults }}
             {{- toYaml .environment.defaults | nindent 12 }}
             {{- end }}
           {{- if .application.helmParameters }}
           parameters:
-            {{- range .application.helmParameters }}
+          {{- range .application.helmParameters }}
             - name: '{{.name}}'
               value: '{{.value}}'
-            {{- end }}
           {{- end }}
-      
+          {{- end }}
       {{- end }}
       
       destination:
@@ -127,7 +114,6 @@ spec:
             {{- toYaml .environment.metadata.annotations | nindent 12 }}
           {{- end }}
       
-      # Health assessment
       ignoreDifferences:
         - group: apps
           kind: Deployment
@@ -151,13 +137,10 @@ spec:
           value: '{{.application.owner}}'
         {{- end }}
   
-  # Template patch to filter combinations
-  # Only create applications where the environment is in the app's environments list
   templatePatch: |
     {{- $envName := .environment.name }}
     {{- $envList := .application.environments }}
     {{- if not (has $envName $envList) }}
-    # Skip this combination - environment not in app's target list
     metadata:
       name: skip-{{.application.name}}-{{.environment.name}}
     spec:
