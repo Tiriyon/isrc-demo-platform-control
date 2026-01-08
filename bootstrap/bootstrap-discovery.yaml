@@ -31,7 +31,7 @@ spec:
         app: '{{.application.name}}'
         environment: '{{.environment.name}}'
         managed-by: application-deployer
-        deployment-strategy: '{{default "standard" .application.valueStrategy}}'
+        deployment-strategy: '{{default "files" .application.valueStrategy}}'
       annotations:
         application-source: '{{.application.source.repoURL}}'
         application-path: '{{.application.source.path}}'
@@ -39,8 +39,6 @@ spec:
     
     spec:
       project: '{{default "applications" .application.project}}'
-      {{- $valueStrategy := default "files" .application.valueStrategy }}
-      {{- if eq $valueStrategy "files" }}
       sources:
         - repoURL: '{{.application.source.repoURL}}'
           targetRevision: '{{.application.source.targetRevision}}'
@@ -53,22 +51,6 @@ spec:
         - repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
           targetRevision: main
           ref: values
-      {{- else }}
-      source:
-        repoURL: '{{.application.source.repoURL}}'
-        targetRevision: '{{.application.source.targetRevision}}'
-        path: '{{.application.source.path}}'
-        helm:
-          releaseName: '{{.application.name}}'
-          values: |
-            {{- if .application.baseValues }}
-            {{- toYaml .application.baseValues | nindent 12 }}
-            {{- end }}
-            {{- $envValues := index .application.environmentValues .environment.name }}
-            {{- if $envValues }}
-            {{- toYaml $envValues | nindent 12 }}
-            {{- end }}
-      {{- end }}
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{.environment.namespace}}'
