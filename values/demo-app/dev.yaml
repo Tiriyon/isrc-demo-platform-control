@@ -32,7 +32,7 @@ demo-app:
 
   envVar:
     - name: APP_ENV
-      value: production
+      value: dev
     - name: LOG_FORMAT
       value: json
 
