@@ -1,0 +1,26 @@
+application:
+  name: demo-app
+  owner: platform-team
+  
+  # Declare which environments this app deploys to
+  environments:
+    - dev
+    - staging
+  
+  # Source configuration (always main branch)
+  source:
+    path: demo-app
+    repoURL: git@github.com:Tiriyon/isrc-demo-app-catalog.git
+    targetRevision: main
+  
+  # ArgoCD project
+  project: applications
+  
+  # Use external value files (Option A)
+  valueStrategy: files
+  valuesPath: values/demo-app  # Optional, defaults to values/{app.name}
+  
+  # Optional: Additional helm parameters
+  helmParameters:
+    - name: global.environment
+      value: '{{ .environment.name }}'

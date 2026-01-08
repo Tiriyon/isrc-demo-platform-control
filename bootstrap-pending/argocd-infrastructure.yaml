@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: argocd-infrastructure
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  goTemplate: true
+  generators:
+    # AppProjects
+    - git:
+        repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
+        revision: main
+        files:
+          - path: "infrastructure/projects/*.yaml"
+    # Repository Secrets
+    - git:
+        repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
+        revision: main
+        files:
+          - path: "infrastructure/repositories/*.yaml"
+  
+  template:
+    metadata:
+      name: 'infra-{{.path.basename}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
+        targetRevision: main
+        path: '{{.path.path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: argocd
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true

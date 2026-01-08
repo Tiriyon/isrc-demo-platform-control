@@ -1,0 +1,55 @@
+environment:
+  name: dev
+  namespace: dev-apps
+  cluster: in-cluster
+  
+  # Environment-level default values (applied to all apps)
+  defaults:
+    replicas: 1
+    
+    image:
+      pullPolicy: Always
+    
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    
+    ingress:
+      className: nginx
+      tls:
+        enabled: false
+    
+    monitoring:
+      enabled: true
+    
+    autoscaling:
+      enabled: false
+  
+  # ArgoCD sync settings
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Namespace metadata
+  metadata:
+    labels:
+      environment: dev
+      cost-center: engineering
+      monitoring: enabled
+      istio-injection: disabled
+    annotations:
+      description: "Development environment for testing and integration"

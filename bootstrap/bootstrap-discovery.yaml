@@ -1,0 +1,165 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: application-deployer
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  
+  generators:
+    - matrix:
+        generators:
+          # Generator 1: All application definitions
+          - git:
+              repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
+              revision: main
+              files:
+                - path: "applications/*.yaml"
+          
+          # Generator 2: All environment definitions
+          - git:
+              repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
+              revision: main
+              files:
+                - path: "environments/*.yaml"
+  
+  template:
+    metadata:
+      name: '{{.application.name}}-{{.environment.name}}'
+      namespace: argocd
+      labels:
+        app: '{{.application.name}}'
+        environment: '{{.environment.name}}'
+        managed-by: application-deployer
+        deployment-strategy: '{{default "standard" .application.valueStrategy}}'
+      annotations:
+        application-source: '{{.application.source.repoURL}}'
+        application-path: '{{.application.source.path}}'
+        environment-namespace: '{{.environment.namespace}}'
+        notifications.argoproj.io/subscribe.on-deployed.slack: deployments
+        notifications.argoproj.io/subscribe.on-health-degraded.slack: alerts
+    
+    spec:
+      project: '{{default "applications" .application.project}}'
+      
+      # Conditional source configuration based on valueStrategy
+      {{- if eq .application.valueStrategy "files" }}
+      
+      # OPTION A: External value files
+      sources:
+        # Source 1: The actual application from app-catalog
+        - repoURL: '{{.application.source.repoURL}}'
+          targetRevision: '{{.application.source.targetRevision}}'
+          path: '{{.application.source.path}}'
+          helm:
+            releaseName: '{{.application.name}}'
+            valueFiles:
+              - $values/{{default (printf "values/%s" .application.name) .application.valuesPath}}/base.yaml
+              - $values/{{default (printf "values/%s" .application.name) .application.valuesPath}}/{{.environment.name}}.yaml
+            {{- if .application.helmParameters }}
+            parameters:
+              {{- range .application.helmParameters }}
+              - name: '{{.name}}'
+                value: '{{.value}}'
+              {{- end }}
+            {{- end }}
+        
+        # Source 2: Values from platform-control repo
+        - repoURL: git@github.com:Tiriyon/isrc-demo-platform-control.git
+          targetRevision: main
+          ref: values
+      
+      {{- else }}
+      
+      # OPTION B: Inline values
+      source:
+        repoURL: '{{.application.source.repoURL}}'
+        targetRevision: '{{.application.source.targetRevision}}'
+        path: '{{.application.source.path}}'
+        helm:
+          releaseName: '{{.application.name}}'
+          values: |
+            # Base values
+            {{- if .application.baseValues }}
+            {{- toYaml .application.baseValues | nindent 12 }}
+            {{- end }}
+            
+            # Environment-specific values
+            {{- $envName := .environment.name }}
+            {{- $envValues := index .application.environmentValues $envName }}
+            {{- if $envValues }}
+            {{- toYaml $envValues | nindent 12 }}
+            {{- end }}
+            
+            # Environment defaults (lowest priority)
+            {{- if .environment.defaults }}
+            {{- toYaml .environment.defaults | nindent 12 }}
+            {{- end }}
+          {{- if .application.helmParameters }}
+          parameters:
+            {{- range .application.helmParameters }}
+            - name: '{{.name}}'
+              value: '{{.value}}'
+            {{- end }}
+          {{- end }}
+      
+      {{- end }}
+      
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{.environment.namespace}}'
+      
+      syncPolicy:
+        {{- toYaml .environment.syncPolicy | nindent 8 }}
+        managedNamespaceMetadata:
+          labels:
+            environment: '{{.environment.name}}'
+            managed-by: argocd
+            application: '{{.application.name}}'
+            {{- if .environment.metadata.labels }}
+            {{- toYaml .environment.metadata.labels | nindent 12 }}
+            {{- end }}
+          {{- if .environment.metadata.annotations }}
+          annotations:
+            {{- toYaml .environment.metadata.annotations | nindent 12 }}
+          {{- end }}
+      
+      # Health assessment
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
+        {{- if .application.ignoreDifferences }}
+        {{- toYaml .application.ignoreDifferences | nindent 8 }}
+        {{- end }}
+      
+      info:
+        - name: Environment
+          value: '{{.environment.name}}'
+        - name: Application
+          value: '{{.application.name}}'
+        - name: Namespace
+          value: '{{.environment.namespace}}'
+        - name: Cluster
+          value: '{{.environment.cluster}}'
+        {{- if .application.owner }}
+        - name: Owner
+          value: '{{.application.owner}}'
+        {{- end }}
+  
+  # Template patch to filter combinations
+  # Only create applications where the environment is in the app's environments list
+  templatePatch: |
+    {{- $envName := .environment.name }}
+    {{- $envList := .application.environments }}
+    {{- if not (has $envName $envList) }}
+    # Skip this combination - environment not in app's target list
+    metadata:
+      name: skip-{{.application.name}}-{{.environment.name}}
+    spec:
+      project: skip-this-combination
+    {{- end }}

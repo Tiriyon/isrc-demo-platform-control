@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+spec:
+  description: Application workloads deployed via GitOps
+  
+  sourceRepos:
+    - 'git@github.com:Tiriyon/isrc-demo-app-catalog.git'
+    - 'git@github.com:Tiriyon/isrc-demo-platform-control.git'
+  
+  destinations:
+    - namespace: 'dev-apps'
+      server: https://kubernetes.default.svc
+    - namespace: 'staging-apps'
+      server: https://kubernetes.default.svc
+    - namespace: 'production'
+      server: https://kubernetes.default.svc
+  
+  clusterResourceWhitelist:
+    - group: ''
+      kind: Namespace
+  
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  
+  namespaceResourceBlacklist:
+    - group: ''
+      kind: ResourceQuota
+    - group: ''
+      kind: LimitRange
