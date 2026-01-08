@@ -9,7 +9,7 @@ application:
   
   # Source configuration (always main branch)
   source:
-    path: demo-app
+    path: demo_app
     repoURL: git@github.com:Tiriyon/isrc-demo-app-catalog.git
     targetRevision: main
   
