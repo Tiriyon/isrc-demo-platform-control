@@ -1,0 +1,58 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bootstrap-arutzimng
+  namespace: openshift-gitops
+spec:
+  project: gitops
+  source:
+    repoURL: ssh://git@<base-bitbucket-url>/gp/arutzimng.git # change to a isrc-demo-chart-repo
+    targetRevision: HEAD
+    path: .
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-gitops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+---
+# NOTE: I don't need this repo for now
+#apiVersion: argoproj.io/v1alpha1
+#kind: Application
+#metadata:
+#  name: bootstrap-callpostflow
+#  namespace: openshift-gitops
+#spec:
+#  project: gitops
+#  source:
+#    repoURL: ssh://git@<base-bitbucket-url>/gp/callpostflow.git
+#    targetRevision: HEAD
+#    path: .
+#  destination:
+#    server: https://kubernetes.default.svc
+#    namespace: openshift-gitops
+#  syncPolicy:
+#    automated:
+#      prune: true
+#      selfHeal: true
+---
+# NOTE: I don't need this repo
+#apiVersion: argoproj.io/v1alpha1
+#kind: Application
+#metadata:
+#  name: bootstrap-canlyzer
+#  namespace: openshift-gitops
+#spec:
+#  project: gitops
+#  source:
+#    repoURL: ssh://git@<base-bitbucket-url>/gp/canlyzer.git
+#    targetRevision: HEAD
+#    path: .
+#  destination:
+#    server: https://kubernetes.default.svc
+#    namespace: openshift-gitops
+#  syncPolicy:
+#    automated:
+#      prune: true
+#      selfHeal: true
